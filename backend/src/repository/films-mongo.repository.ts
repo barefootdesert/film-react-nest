@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { FilmDocument } from './film.schema';
+import { Film, FilmDocument } from './film.schema';
 import {
   FilmEntity,
   FilmsRepository,
@@ -9,7 +10,10 @@ import {
 
 @Injectable()
 export class FilmsMongoRepository implements FilmsRepository {
-  constructor(private readonly filmModel: Model<FilmDocument>) {}
+  constructor(
+    @InjectModel(Film.name)
+    private readonly filmModel: Model<FilmDocument>,
+  ) {}
 
   async findAll(): Promise<FilmEntity[]> {
     return this.filmModel.find().lean().exec();

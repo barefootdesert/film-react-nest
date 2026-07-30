@@ -1,43 +1,65 @@
-import { Schema, Document, Model, model, models } from 'mongoose';
-import { FilmEntity, ScheduleEntity } from './films-repository.interface';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument } from 'mongoose';
 
-export type FilmDocument = FilmEntity & Document;
+export type FilmDocument = HydratedDocument<Film>;
 
-const ScheduleSchema = new Schema<ScheduleEntity>(
-  {
-    id: { type: String, required: true },
-    daytime: { type: String, required: true },
-    hall: { type: Number, required: true },
-    rows: { type: Number, required: true },
-    seats: { type: Number, required: true },
-    price: { type: Number, required: true },
-    taken: { type: [String], default: [] },
-  },
-  { _id: false },
-);
+@Schema({ _id: false })
+export class Schedule {
+  @Prop({ required: true })
+  id: string;
 
-export const FilmSchema = new Schema<FilmDocument>(
-  {
-    id: { type: String, required: true, unique: true },
-    rating: { type: Number, required: true },
-    director: { type: String, required: true },
-    tags: { type: [String], default: [] },
-    image: { type: String, required: true },
-    cover: { type: String, required: true },
-    title: { type: String, required: true },
-    about: { type: String, required: true },
-    description: { type: String, required: true },
-    schedule: { type: [ScheduleSchema], default: [] },
-  },
-  {
-    collection: 'films',
-    versionKey: false,
-  },
-);
+  @Prop({ required: true })
+  daytime: string;
 
-export function getFilmModel(): Model<FilmDocument> {
-  return (
-    (models.Film as Model<FilmDocument>) ||
-    model<FilmDocument>('Film', FilmSchema)
-  );
+  @Prop({ required: true, type: Number })
+  hall: number;
+
+  @Prop({ required: true })
+  rows: number;
+
+  @Prop({ required: true })
+  seats: number;
+
+  @Prop({ required: true })
+  price: number;
+
+  @Prop({ type: [String], default: [] })
+  taken: string[];
 }
+
+export const ScheduleSchema = SchemaFactory.createForClass(Schedule);
+
+@Schema({ collection: 'films', versionKey: false })
+export class Film {
+  @Prop({ required: true, unique: true })
+  id: string;
+
+  @Prop({ required: true })
+  rating: number;
+
+  @Prop({ required: true })
+  director: string;
+
+  @Prop({ type: [String], default: [] })
+  tags: string[];
+
+  @Prop({ required: true })
+  image: string;
+
+  @Prop({ required: true })
+  cover: string;
+
+  @Prop({ required: true })
+  title: string;
+
+  @Prop({ required: true })
+  about: string;
+
+  @Prop({ required: true })
+  description: string;
+
+  @Prop({ type: [ScheduleSchema], default: [] })
+  schedule: Schedule[];
+}
+
+export const FilmSchema = SchemaFactory.createForClass(Film);

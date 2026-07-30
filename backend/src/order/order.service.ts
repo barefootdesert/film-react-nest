@@ -30,7 +30,13 @@ export class OrderService {
     const seatsBySession = new Map<string, string[]>();
     const sessionMeta = new Map<
       string,
-      { filmId: string; sessionId: string; taken: string[] }
+      {
+        filmId: string;
+        sessionId: string;
+        taken: string[];
+        daytime: string;
+        price: number;
+      }
     >();
 
     for (const ticket of order.tickets) {
@@ -51,6 +57,8 @@ export class OrderService {
           filmId: ticket.film,
           sessionId: ticket.session,
           taken: [...(schedule.taken || [])],
+          daytime: schedule.daytime,
+          price: schedule.price,
         });
         seatsBySession.set(key, []);
       }
@@ -72,15 +80,18 @@ export class OrderService {
       await this.filmsRepository.takeSeats(meta.filmId, meta.sessionId, seats);
     }
 
-    const items: OrderResultDto[] = order.tickets.map((ticket) => ({
-      id: randomUUID(),
-      film: ticket.film,
-      session: ticket.session,
-      daytime: ticket.daytime,
-      row: ticket.row,
-      seat: ticket.seat,
-      price: ticket.price,
-    }));
+    const items: OrderResultDto[] = order.tickets.map((ticket) => {
+      const meta = sessionMeta.get(`${ticket.film}:${ticket.session}`);
+      return {
+        id: randomUUID(),
+        film: ticket.film,
+        session: ticket.session,
+        daytime: meta.daytime,
+        row: ticket.row,
+        seat: ticket.seat,
+        price: meta.price,
+      };
+    });
 
     return {
       total: items.length,

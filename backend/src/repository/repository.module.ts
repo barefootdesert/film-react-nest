@@ -1,24 +1,34 @@
 import { Module } from '@nestjs/common';
-import mongoose from 'mongoose';
-import { AppConfig, configProvider } from '../app.config.provider';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { FILMS_REPOSITORY } from './films-repository.interface';
 import { FilmsMemoryRepository } from './films-memory.repository';
 import { FilmsMongoRepository } from './films-mongo.repository';
-import { getFilmModel } from './film.schema';
+import { Film, FilmSchema } from './film.schema';
+
+const isMongo = process.env.DATABASE_DRIVER === 'mongodb';
 
 @Module({
+  imports: [
+    ...(isMongo
+      ? [
+          MongooseModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+              uri: configService.get<string>('DATABASE_URL'),
+            }),
+          }),
+          MongooseModule.forFeature([{ name: Film.name, schema: FilmSchema }]),
+        ]
+      : []),
+  ],
   providers: [
-    configProvider,
+    FilmsMemoryRepository,
+    ...(isMongo ? [FilmsMongoRepository] : []),
     {
       provide: FILMS_REPOSITORY,
-      useFactory: async (config: AppConfig) => {
-        if (config.database.driver === 'mongodb') {
-          await mongoose.connect(config.database.url);
-          return new FilmsMongoRepository(getFilmModel());
-        }
-        return new FilmsMemoryRepository();
-      },
-      inject: ['CONFIG'],
+      useExisting: isMongo ? FilmsMongoRepository : FilmsMemoryRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],
