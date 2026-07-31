@@ -1,34 +1,45 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { FILMS_REPOSITORY } from './films-repository.interface';
 import { FilmsMemoryRepository } from './films-memory.repository';
-import { FilmsMongoRepository } from './films-mongo.repository';
-import { Film, FilmSchema } from './film.schema';
+import { FilmsPostgresRepository } from './films-postgres.repository';
+import { Film, Schedule } from './film.entity';
 
-const isMongo = process.env.DATABASE_DRIVER === 'mongodb';
+const isPostgres = process.env.DATABASE_DRIVER === 'postgres';
 
 @Module({
   imports: [
-    ...(isMongo
+    ...(isPostgres
       ? [
-          MongooseModule.forRootAsync({
+          TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-              uri: configService.get<string>('DATABASE_URL'),
-            }),
+            useFactory: (configService: ConfigService) => {
+              const databaseUrl = configService.get<string>('DATABASE_URL');
+              const parsed = new URL(databaseUrl);
+              return {
+                type: 'postgres' as const,
+                host: parsed.hostname,
+                port: Number(parsed.port) || 5432,
+                database: parsed.pathname.replace(/^\//, ''),
+                username: configService.get<string>('DATABASE_USERNAME'),
+                password: configService.get<string>('DATABASE_PASSWORD'),
+                entities: [Film, Schedule],
+                synchronize: false,
+              };
+            },
           }),
-          MongooseModule.forFeature([{ name: Film.name, schema: FilmSchema }]),
+          TypeOrmModule.forFeature([Film, Schedule]),
         ]
       : []),
   ],
   providers: [
     FilmsMemoryRepository,
-    ...(isMongo ? [FilmsMongoRepository] : []),
+    ...(isPostgres ? [FilmsPostgresRepository] : []),
     {
       provide: FILMS_REPOSITORY,
-      useExisting: isMongo ? FilmsMongoRepository : FilmsMemoryRepository,
+      useExisting: isPostgres ? FilmsPostgresRepository : FilmsMemoryRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],
