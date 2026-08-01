@@ -33,7 +33,6 @@ export class OrderService {
       {
         filmId: string;
         sessionId: string;
-        taken: string[];
         daytime: string;
         price: number;
       }
@@ -56,22 +55,18 @@ export class OrderService {
         sessionMeta.set(key, {
           filmId: ticket.film,
           sessionId: ticket.session,
-          taken: [...(schedule.taken || [])],
           daytime: schedule.daytime,
           price: schedule.price,
         });
         seatsBySession.set(key, []);
       }
 
-      const meta = sessionMeta.get(key);
       const pending = seatsBySession.get(key);
-
-      if (meta.taken.includes(seatKey) || pending.includes(seatKey)) {
+      if (pending.includes(seatKey)) {
         throw new BadRequestException({
           error: `Seat ${seatKey} is already taken`,
         });
       }
-
       pending.push(seatKey);
     }
 

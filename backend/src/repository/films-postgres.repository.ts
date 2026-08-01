@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Film, Schedule } from './film.entity';
@@ -47,15 +51,33 @@ export class FilmsPostgresRepository implements FilmsRepository {
     sessionId: string,
     seats: string[],
   ): Promise<void> {
-    const session = await this.scheduleRepository.findOne({
-      where: { id: sessionId, film: { id: filmId } },
+    await this.scheduleRepository.manager.transaction(async (manager) => {
+      const session = await manager
+        .getRepository(Schedule)
+        .createQueryBuilder('schedule')
+        .setLock('pessimistic_write')
+        .where('schedule.id = :sessionId', { sessionId })
+        .andWhere('schedule.filmId = :filmId', { filmId })
+        .getOne();
+
+      if (!session) {
+        throw new NotFoundException({
+          error: `Session ${sessionId} for film ${filmId} not found`,
+        });
+      }
+
+      const taken = this.normalizeTaken(session.taken);
+      for (const seat of seats) {
+        if (taken.includes(seat)) {
+          throw new BadRequestException({
+            error: `Seat ${seat} is already taken`,
+          });
+        }
+      }
+
+      session.taken = [...taken, ...seats];
+      await manager.save(session);
     });
-    if (!session) {
-      return;
-    }
-    const taken = this.normalizeTaken(session.taken);
-    session.taken = [...taken, ...seats];
-    await this.scheduleRepository.save(session);
   }
 
   private toFilmEntity(film: Film): FilmEntity {
