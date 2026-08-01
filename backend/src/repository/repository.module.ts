@@ -1,34 +1,37 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { FILMS_REPOSITORY } from './films-repository.interface';
-import { FilmsMemoryRepository } from './films-memory.repository';
-import { FilmsMongoRepository } from './films-mongo.repository';
-import { Film, FilmSchema } from './film.schema';
-
-const isMongo = process.env.DATABASE_DRIVER === 'mongodb';
+import { FilmsPostgresRepository } from './films-postgres.repository';
+import { Film, Schedule } from './film.entity';
 
 @Module({
   imports: [
-    ...(isMongo
-      ? [
-          MongooseModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-              uri: configService.get<string>('DATABASE_URL'),
-            }),
-          }),
-          MongooseModule.forFeature([{ name: Film.name, schema: FilmSchema }]),
-        ]
-      : []),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.getOrThrow<string>('DATABASE_URL');
+        const parsed = new URL(databaseUrl);
+
+        return {
+          type: 'postgres' as const,
+          host: parsed.hostname,
+          port: Number(parsed.port) || 5432,
+          database: parsed.pathname.replace(/^\//, ''),
+          username: configService.getOrThrow<string>('DATABASE_USERNAME'),
+          password: configService.getOrThrow<string>('DATABASE_PASSWORD'),
+          entities: [Film, Schedule],
+          synchronize: false,
+        };
+      },
+    }),
+    TypeOrmModule.forFeature([Film, Schedule]),
   ],
   providers: [
-    FilmsMemoryRepository,
-    ...(isMongo ? [FilmsMongoRepository] : []),
     {
       provide: FILMS_REPOSITORY,
-      useExisting: isMongo ? FilmsMongoRepository : FilmsMemoryRepository,
+      useClass: FilmsPostgresRepository,
     },
   ],
   exports: [FILMS_REPOSITORY],
