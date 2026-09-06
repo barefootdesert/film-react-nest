@@ -1,36 +1,86 @@
 # FILM!
 
-## Установка
+Сервис бронирования билетов в кинотеатр.
 
-### MongoDB
+## Деплой
 
-Установите MongoDB скачав дистрибутив с официального сайта или с помощью пакетного менеджера вашей ОС. Также можно воспользоваться Docker (см. ветку `feat/docker`.
+Приложение развёрнуто по адресу: **https://your-domain.nomoreparties.site**
 
-Выполните скрипт `test/mongodb_initial_stub.js` в консоли `mongo`.
+pgAdmin доступен на порту `8080`.
+
+## Структура проекта
+
+```
+film-react-nest/
+├── backend/          # NestJS API
+├── frontend/         # React SPA (Vite)
+├── nginx/            # Nginx reverse proxy
+├── docker-compose.yml
+└── .env.example
+```
+
+## Локальная разработка
+
+### База данных
+
+```bash
+docker compose up database -d
+```
+
+Инициализация БД (скрипты из `backend/test/`):
+
+1. `prac.init.sql`
+2. `prac.films.sql`
+3. `prac.shedules.sql`
+
+При полном `docker compose up` скрипты подключаются автоматически при первом запуске PostgreSQL.
 
 ### Бэкенд
 
-Перейдите в папку с исходным кодом бэкенда
+```bash
+cd backend
+cp .env.example .env
+npm ci
+npm run start:dev
+```
 
-`cd backend`
+API: `http://localhost:3000/api/afisha`
 
-Установите зависимости (точно такие же, как в package-lock.json) помощью команд
+`LOGGER_TYPE` — формат логов:
 
-`npm ci` или `yarn install --frozen-lockfile`
+| Значение | Логгер | Описание |
+|----------|--------|----------|
+| `dev` | DevLogger | Цветной вывод (по умолчанию) |
+| `json` | JsonLogger | JSON |
+| `tskv` | TskvLogger | TSKV |
 
-Создайте `.env` файл из примера `.env.example`, в нём укажите:
+### Фронтенд
 
-* `DATABASE_DRIVER` - тип драйвера СУБД - в нашем случае это `mongodb` 
-* `DATABASE_URL` - адрес СУБД MongoDB, например `mongodb://127.0.0.1:27017/practicum`.  
+```bash
+cd frontend
+cp .env.example .env
+npm ci
+npm run dev
+```
 
-MongoDB должна быть установлена и запущена.
+## Docker
 
-Запустите бэкенд:
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
 
-`npm start:debug`
+- Приложение: `http://localhost`
+- pgAdmin: `http://localhost:8080`
 
-Для проверки отправьте тестовый запрос с помощью Postman или `curl`.
+## Тесты
 
+```bash
+cd backend
+npm test
+npm run lint
+```
 
+## CI/CD
 
-
+При push в `main` GitHub Actions собирает Docker-образы и публикует их в `ghcr.io`.
