@@ -1,3 +1,4 @@
+# Запуск на сервере из готовых образов GHCR (без локальной сборки)
 services:
   database:
     image: postgres:16
@@ -32,10 +33,7 @@ services:
     restart: always
 
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-local/film-react-nest}/backend:latest
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY}/backend:latest
     container_name: film-backend
     environment:
       DATABASE_DRIVER: ${DATABASE_DRIVER}
@@ -51,13 +49,7 @@ services:
     restart: always
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-local/film-react-nest}/frontend:latest
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL}
-        VITE_CDN_URL: ${VITE_CDN_URL}
+    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:latest
     container_name: film-frontend
     volumes:
       - frontend-dist:/usr/share/nginx/html
@@ -66,10 +58,7 @@ services:
     restart: always
 
   nginx:
-    image: ghcr.io/${GITHUB_REPOSITORY:-local/film-react-nest}/nginx:latest
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY}/nginx:latest
     container_name: film-nginx
     ports:
       - "80:80"
