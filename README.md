@@ -84,3 +84,5 @@ npm run lint
 ## CI/CD
 
 При push в `main` GitHub Actions собирает Docker-образы и публикует их в `ghcr.io`.
+
+Домен проекта : http://film.barefootdesert.nomorepartiessite.ru
