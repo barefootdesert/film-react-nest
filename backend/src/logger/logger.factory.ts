@@ -1,10 +1,11 @@
 import { LoggerService } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DevLogger } from './dev.logger';
 import { JsonLogger } from './json.logger';
 import { TskvLogger } from './tskv.logger';
 
-export function createLogger(): LoggerService {
-  switch (process.env.LOGGER_TYPE) {
+export function createLogger(configService: ConfigService): LoggerService {
+  switch (configService.get<string>('LOGGER_TYPE')) {
     case 'json':
       return new JsonLogger();
     case 'tskv':

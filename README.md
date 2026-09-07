@@ -4,9 +4,9 @@
 
 ## Деплой
 
-Приложение развёрнуто по адресу: **https://your-domain.nomoreparties.site**
+Приложение развёрнуто по адресу: **http://film.barefootdesert.nomorepartiessite.ru**
 
-pgAdmin доступен на порту `8080`.
+pgAdmin: `http://film.barefootdesert.nomorepartiessite.ru:8080`
 
 ## Структура проекта
 
@@ -83,6 +83,4 @@ npm run lint
 
 ## CI/CD
 
-При push в `main` GitHub Actions собирает Docker-образы и публикует их в `ghcr.io`.
-
-Домен проекта : http://film.barefootdesert.nomorepartiessite.ru
+При push в `main` / `review-2` GitHub Actions собирает Docker-образы и публикует их в `ghcr.io`.

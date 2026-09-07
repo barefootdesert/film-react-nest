@@ -8,11 +8,13 @@ describe('FilmsController', () => {
   let controller: FilmsController;
   let filmsService: FilmsService;
 
+  const filmId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
   const mockFilmsList: FilmsListDto = {
     total: 1,
     items: [
       {
-        id: 'film-1',
+        id: filmId,
         rating: 8.5,
         director: 'Director',
         tags: ['drama'],
@@ -29,7 +31,7 @@ describe('FilmsController', () => {
     total: 1,
     items: [
       {
-        id: 'session-1',
+        id: 'bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee',
         daytime: '2024-07-01T10:00:00.000Z',
         hall: 1,
         rows: 5,
@@ -69,18 +71,19 @@ describe('FilmsController', () => {
 
   describe('findSchedule', () => {
     it('возвращает расписание сеансов для фильма', async () => {
-      const result = await controller.findSchedule('film-1');
+      const result = await controller.findSchedule(filmId);
 
       expect(result).toEqual(mockScheduleList);
-      expect(filmsService.findSchedule).toHaveBeenCalledWith('film-1');
+      expect(filmsService.findSchedule).toHaveBeenCalledWith(filmId);
     });
 
     it('пробрасывает NotFoundException если фильм не найден', async () => {
+      const missingId = 'ffffffff-ffff-ffff-ffff-ffffffffffff';
       jest
         .spyOn(filmsService, 'findSchedule')
         .mockRejectedValue(new NotFoundException('Film not found'));
 
-      await expect(controller.findSchedule('unknown')).rejects.toThrow(
+      await expect(controller.findSchedule(missingId)).rejects.toThrow(
         NotFoundException,
       );
     });

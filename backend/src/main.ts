@@ -10,7 +10,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = Number(configService.get<string>('PORT')) || 3000;
 
-  app.useLogger(createLogger());
+  app.useLogger(createLogger(configService));
   app.setGlobalPrefix('api/afisha');
   app.enableCors();
   app.useGlobalPipes(
